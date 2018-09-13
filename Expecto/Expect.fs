@@ -256,7 +256,36 @@ let equal (actual : 'a) (expected : 'a) message =
   | (:? float as a), (:? float as e) ->
     if a <> e then
       Tests.failtestf "%s. Actual value was %f but had expected it to be %f." message a e
-  | _, _ ->
+  | a, e ->
+    let ai = a.GetType().GetFields().GetEnumerator()
+    let ei = e.GetType().GetFields().GetEnumerator()
+    let mutable i = 0
+    let baseMsg errorIndex =
+      let diffString = String(' ', errorIndex + 1) + "↑"
+      sprintf "%s.
+          Expected string to equal:
+          %A
+          %s
+          The string differs at index %d.
+          %A
+          %s"
+                    message expected diffString errorIndex actual diffString
+    while ei.MoveNext() do
+      if ai.MoveNext() then
+        if ai.Current = ei.Current then ()
+        else
+          Tests.failtestf "%s
+          String does not match at position %i. Expected char: %A, but got %A."
+            (baseMsg i) i ei.Current ai.Current
+      else
+        Tests.failtestf "%s
+          String `actual` was shorter than expected, at pos %i for expected item %A."
+          (baseMsg i) i ei.Current
+      i <- i + 1
+    if ai.MoveNext() then
+      Tests.failtestf "%s
+          String `actual` was longer than expected, at pos %i found item %A."
+                      (baseMsg i) i (ai.Current)
     if actual <> expected then
       Tests.failtestf "%s. Actual value was %A but had expected it to be %A." message actual expected
 
