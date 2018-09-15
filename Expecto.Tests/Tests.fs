@@ -82,7 +82,7 @@ let tests =
 
       test "fail - different content" {
         Expect.equal {a = "dd"; b = "de" } {a = "dd"; b = "dw" } "Failing - record with different content"
-      } |> assertTestFailsWithMsgStarting "Failing - string with different content.\n          Expected string to equal:\n          \"Tes2\"\n              ↑\n          The string differs at index 3.\n          \"Test\"\n              ↑\n          String does not match at position 3. Expected char: '2', but got 't'."
+      } |> assertTestFailsWithMsgStarting "Failing - record with different content.\n          Expected record to equal:\n          \"de\"\n              ↑\n          The string differs at index 1.\n          \"dw\"\n              ↑\n          record does not match at position 1. Expected field with value: 'dw', but got 'de'."
     ]
 
     testList "sumTestResults" [
