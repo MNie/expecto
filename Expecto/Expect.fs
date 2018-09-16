@@ -9,6 +9,7 @@ open System.Text.RegularExpressions
 open Expecto.Logging
 open Expecto.Logging.Message
 open System.Runtime.InteropServices
+open Microsoft.FSharp.Reflection
 
 /// Expects f to throw an exception.
 let throws f message =
@@ -257,25 +258,22 @@ let equal (actual : 'a) (expected : 'a) message =
     if a <> e then
       Tests.failtestf "%s. Actual value was %f but had expected it to be %f." message a e
   | a, e ->
-    let ai = a.GetType().GetProperties().GetEnumerator()
-    let ei = e.GetType().GetProperties().GetEnumerator()
+    let ai = (FSharpType.GetRecordFields (a.GetType())).GetEnumerator()
+    let ei = (FSharpType.GetRecordFields (e.GetType())).GetEnumerator()
     let mutable i = 0
     let baseMsg errorIndex =
-      let diffString = String(' ', errorIndex + 1) + "↑"
       sprintf "%s.
           Expected record to equal:
           %A
-          %s
           The record differs at index %d.
-          %A
-          %s"
-                    message expected diffString errorIndex actual diffString
+          %A"
+                    message expected errorIndex actual
     while ei.MoveNext() do
       if ai.MoveNext() then
         if ai.Current = ei.Current then ()
         else
           Tests.failtestf "%s
-          String does not match at position %i. Expected char: %A, but got %A."
+          Record does not match at position %i. Expected field: %A, but got %A."
             (baseMsg i) i ei.Current ai.Current
       i <- i + 1
     if actual <> expected then
