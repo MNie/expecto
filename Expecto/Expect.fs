@@ -258,25 +258,26 @@ let equal (actual : 'a) (expected : 'a) message =
     if a <> e then
       Tests.failtestf "%s. Actual value was %f but had expected it to be %f." message a e
   | a, e ->
-    let ai = (FSharpType.GetRecordFields (a.GetType())).GetEnumerator()
-    let ei = (FSharpType.GetRecordFields (e.GetType())).GetEnumerator()
-    let mutable i = 0
-    let baseMsg errorIndex =
-      sprintf "%s.
-          Expected record to equal:
-          %A
-          The record differs at index %d.
-          %A"
-                    message expected errorIndex actual
-    while ei.MoveNext() do
-      if ai.MoveNext() then
-        if ai.Current = ei.Current then ()
-        else
-          Tests.failtestf "%s
-          Record does not match at position %i. Expected field: %A, but got %A."
-            (baseMsg i) i ei.Current ai.Current
-      i <- i + 1
-    if actual <> expected then
+    if FSharpType.IsRecord(a.GetType()) then
+      let ai = (FSharpType.GetRecordFields (a.GetType())).GetEnumerator()
+      let ei = (FSharpType.GetRecordFields (e.GetType())).GetEnumerator()
+      let mutable i = 0
+      let baseMsg errorIndex =
+        sprintf "%s.
+            Expected record to equal:
+            %A
+            The record differs at index %d.
+            %A"
+                      message expected errorIndex actual
+      while ei.MoveNext() do
+        if ai.MoveNext() then
+          if ai.Current = ei.Current then ()
+          else
+            Tests.failtestf "%s
+            Record does not match at position %i. Expected field: %A, but got %A."
+              (baseMsg i) i ei.Current ai.Current
+        i <- i + 1
+    elif actual <> expected then
       Tests.failtestf "%s. Actual value was %A but had expected it to be %A." message actual expected
 
 /// Expects the two values not to equal each other.
