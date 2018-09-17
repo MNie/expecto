@@ -258,7 +258,7 @@ let equal (actual : 'a) (expected : 'a) message =
     if a <> e then
       Tests.failtestf "%s. Actual value was %f but had expected it to be %f." message a e
   | a, e ->
-    if FSharpType.IsRecord(a.GetType()) then
+    if FSharpType.IsRecord(a.GetType()) = true then
       let ai = (FSharpType.GetRecordFields (a.GetType())).GetEnumerator()
       let ei = (FSharpType.GetRecordFields (e.GetType())).GetEnumerator()
       let mutable i = 0
