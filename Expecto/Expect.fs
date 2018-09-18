@@ -10,6 +10,7 @@ open Expecto.Logging
 open Expecto.Logging.Message
 open System.Runtime.InteropServices
 open Microsoft.FSharp.Reflection
+open System.Reflection
 
 /// Expects f to throw an exception.
 let throws f message =
@@ -258,9 +259,12 @@ let equal (actual : 'a) (expected : 'a) message =
     if a <> e then
       Tests.failtestf "%s. Actual value was %f but had expected it to be %f." message a e
   | a, e ->
-    if FSharpType.IsRecord(a.GetType()) = true then
-      let ai = (FSharpType.GetRecordFields (a.GetType())).GetEnumerator()
-      let ei = (FSharpType.GetRecordFields (e.GetType())).GetEnumerator()
+    if FSharpType.IsRecord(a.GetType(), BindingFlags.Default) then
+      let value (elem: obj) previous =
+        (elem :?> PropertyInfo).GetValue(previous, null)
+      let ai = (FSharpType.GetRecordFields (a.GetType(), BindingFlags.Public)).GetEnumerator()
+      let ei = (FSharpType.GetRecordFields (e.GetType(), BindingFlags.Public)).GetEnumerator()
+      let name() = (ai.Current :?> PropertyInfo).Name
       let mutable i = 0
       let baseMsg errorIndex =
         sprintf "%s.
@@ -271,11 +275,13 @@ let equal (actual : 'a) (expected : 'a) message =
                       message expected errorIndex actual
       while ei.MoveNext() do
         if ai.MoveNext() then
-          if ai.Current = ei.Current then ()
+          let currentA = value ai.Current a
+          let currentE = value ei.Current e
+          if currentA = currentE then ()
           else
             Tests.failtestf "%s
-            Record does not match at position %i. Expected field: %A, but got %A."
-              (baseMsg i) i ei.Current ai.Current
+            Record does not match at position %i for field named `%s`. Expected field with value: %A, but got %A."
+              (baseMsg i) (i + 1) (name()) currentE currentA
         i <- i + 1
     elif actual <> expected then
       Tests.failtestf "%s. Actual value was %A but had expected it to be %A." message actual expected
